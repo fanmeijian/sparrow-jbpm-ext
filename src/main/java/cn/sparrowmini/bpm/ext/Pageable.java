@@ -3,8 +3,8 @@ package cn.sparrowmini.bpm.ext;
 import java.io.Serializable;
 
 public class Pageable implements Serializable {
-    private int pageIndex;
-    private int pageSize;
+    private int pageIndex=0;
+    private int pageSize=10;
     private String[] sort;
 
     public Pageable() {

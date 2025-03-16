@@ -3,6 +3,7 @@ package cn.sparrowmini.bpm.ext;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class SparrowTaskInstance implements Serializable {
     private Long id;
@@ -15,6 +16,8 @@ public class SparrowTaskInstance implements Serializable {
     private List<String> potentialOwners;
     private String actualOwner;
     private Date createdOn;
+    private Map<String,Object> inputData;
+    private Map<String,Object> outputData;
 
     public SparrowTaskInstance() {
     }
@@ -97,5 +100,21 @@ public class SparrowTaskInstance implements Serializable {
 
     public void setCreatedOn(Date createdOn) {
         this.createdOn = createdOn;
+    }
+
+    public Map<String, Object> getInputData() {
+        return inputData;
+    }
+
+    public void setInputData(Map<String, Object> inputData) {
+        this.inputData = inputData;
+    }
+
+    public Map<String, Object> getOutputData() {
+        return outputData;
+    }
+
+    public void setOutputData(Map<String, Object> outputData) {
+        this.outputData = outputData;
     }
 }

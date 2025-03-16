@@ -24,5 +24,5 @@ public interface PorcessInstanceServiceExt {
     @PostMapping(value = "/task-instances")
     @ResponseBody
     @Operation(summary = "我的任务", operationId = "task-instances")
-    public PageImpl<SparrowTaskInstance> MyTasks(@ParameterObject Pageable pageable, @RequestBody List<SparrowJpaFilter> filters);
+    public PageImpl<SparrowTaskInstance> MyTasks(@ParameterObject Pageable pageable,boolean withInput, boolean withOutput, @RequestBody List<SparrowJpaFilter> filters);
 }

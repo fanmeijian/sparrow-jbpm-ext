@@ -16,7 +16,9 @@ public class SparrowCriteriaBuilderHelper<T> {
 
     public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
         List<Predicate> predicates = new ArrayList<Predicate>();
-
+        if(this.filters.isEmpty()) {
+            predicates.add(criteriaBuilder.conjunction());
+        }
         buildCondition(root, query, criteriaBuilder, filters, predicates);
         return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     }

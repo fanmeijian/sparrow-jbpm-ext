@@ -6,7 +6,9 @@ import org.appformer.maven.integration.MavenRepository;
 import org.appformer.maven.support.AFReleaseId;
 import org.appformer.maven.support.AFReleaseIdImpl;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jbpm.kie.services.impl.KModuleDeploymentUnit;
 import org.jbpm.services.api.DeploymentService;
+import org.jbpm.services.api.model.DeploymentUnit;
 import org.kie.server.api.model.KieContainerResource;
 import org.kie.server.api.model.ReleaseId;
 import org.kie.server.services.api.KieServer;
@@ -36,7 +38,7 @@ public class DeploymentExtServiceImpl implements DeploymentExtService {
             byte[] jarContent = null;
             byte[] pomContent = null;
             for (MultipartFile file : files) {
-                if (file.getOriginalFilename().endsWith(".pom")) {
+                if (file.getOriginalFilename().endsWith(".xml")) {
                     pomContent = file.getBytes();
                     Model model = reader.read(file.getInputStream(), false);
                     releaseId = new AFReleaseIdImpl(model.getGroupId(), model.getArtifactId(), model.getVersion());
@@ -56,7 +58,6 @@ public class DeploymentExtServiceImpl implements DeploymentExtService {
 //                this.deploymentService.undeploy(deploymentUnit);
 //            }
 //            this.deploymentService.deploy(deploymentUnit);
-
             this.kieServer.createContainer(releaseId.getArtifactId() + "-" + releaseId.getVersion(), new KieContainerResource(new ReleaseId(releaseId.getGroupId(), releaseId.getArtifactId(), releaseId.getVersion())));
             return releaseId;
 

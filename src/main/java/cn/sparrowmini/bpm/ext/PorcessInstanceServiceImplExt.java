@@ -1,10 +1,13 @@
 package cn.sparrowmini.bpm.ext;
 
+import org.drools.core.process.instance.WorkItem;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.process.audit.ProcessInstanceLog_;
 import org.jbpm.services.api.RuntimeDataService;
+import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.task.impl.model.*;
+import org.kie.api.task.TaskService;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -17,6 +20,7 @@ import javax.persistence.Query;
 import javax.persistence.criteria.*;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,6 +32,8 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     @Autowired
     private RuntimeDataService runtimeDataService;
 
+    @Autowired
+    private UserTaskService taskService;
 
     @Override
     public PageImpl<ProcessInstanceDesc> MyProcessInstances(Pageable pageable, List<SparrowJpaFilter> filters) {
@@ -62,7 +68,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     }
 
     @Override
-    public PageImpl<SparrowTaskInstance> MyTasks(Pageable pageable, List<SparrowJpaFilter> filters) {
+    public PageImpl<SparrowTaskInstance> MyTasks(Pageable pageable,boolean withInput, boolean withOutput, List<SparrowJpaFilter> filters) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         Set<String> entityIds = new HashSet<>();
@@ -81,7 +87,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
             Predicate predicate = new SparrowCriteriaBuilderHelper<TaskImpl>(filters).toPredicate(root, criteriaQuery, cb);
 
-            criteriaQuery.select(root).distinct(true).where(cb.and(predicate), join.get(OrganizationalEntityImpl_.id).in(entityIds));
+            criteriaQuery.select(root).distinct(true).where(cb.and(predicate), join.get(OrganizationalEntityImpl_.id).in(entityIds)).orderBy(cb.desc(root.get(TaskImpl_.id)));
             Query query = em.createQuery(criteriaQuery);
             List<TaskImpl> tasks = query.setFirstResult(pageable.getPageIndex() * pageable.getPageSize()).setMaxResults(pageable.getPageSize()).getResultList();
 
@@ -108,6 +114,12 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
                 ProcessInstanceDesc processInstance = this.runtimeDataService.getProcessInstanceById(task.getTaskData().getProcessInstanceId());
                 taskInstance.setProcessName(processInstance.getProcessName());
                 taskInstance.setName(task.getName());
+                if(withInput){
+                    taskInstance.setInputData(this.taskService.getTaskInputContentByTaskId(task.getId()));
+                }
+                if(withOutput){
+                    taskInstance.setOutputData(this.taskService.getTaskOutputContentByTaskId(task.getId()));
+                }
                 return taskInstance;
             }).collect(Collectors.toList());
 
