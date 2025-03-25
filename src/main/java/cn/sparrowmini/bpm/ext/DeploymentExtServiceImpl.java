@@ -38,7 +38,7 @@ public class DeploymentExtServiceImpl implements DeploymentExtService {
             byte[] jarContent = null;
             byte[] pomContent = null;
             for (MultipartFile file : files) {
-                if (file.getOriginalFilename().endsWith(".xml")) {
+                if (file.getOriginalFilename().endsWith(".xml")||file.getOriginalFilename().endsWith(".pom")) {
                     pomContent = file.getBytes();
                     Model model = reader.read(file.getInputStream(), false);
                     releaseId = new AFReleaseIdImpl(model.getGroupId(), model.getArtifactId(), model.getVersion());
