@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RequestMapping("/jbpm-ext")
 @Tag(name = "jbpm-ext", description = "jbpm扩展服务")
@@ -49,4 +50,9 @@ public interface PorcessInstanceServiceExt {
     @ResponseBody
     @Operation(summary = "提交流程", operationId = "saveProcessAsDraft")
     public void submitProcess(@PathVariable String id,@RequestBody Map<String, Object> body);
+
+    @PostMapping("/process/draft/delete")
+    @ResponseBody
+    @Operation(summary = "删除草稿", operationId = "deleteDraft")
+    public void deleteDraft(@RequestBody Set<String> ids);
 }

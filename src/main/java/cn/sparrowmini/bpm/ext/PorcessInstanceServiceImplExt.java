@@ -66,7 +66,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
             List<ProcessInstanceLog> processInstanceLogs = query.setFirstResult(pageable.getPageIndex() * pageable.getPageSize()).setMaxResults(pageable.getPageSize()).getResultList();
 
-            return new PageImpl<ProcessInstanceDesc>(counta, processInstanceLogs.stream().map(m->runtimeDataService.getProcessInstanceById(m.getProcessInstanceId())).collect(Collectors.toList()), pageable.getPageIndex(), pageable.getPageSize());
+            return new PageImpl<ProcessInstanceDesc>(counta, processInstanceLogs.stream().map(m -> runtimeDataService.getProcessInstanceById(m.getProcessInstanceId())).collect(Collectors.toList()), pageable.getPageIndex(), pageable.getPageSize());
 
         } finally {
             if (em != null && em.isOpen()) {
@@ -76,7 +76,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     }
 
     @Override
-    public PageImpl<SparrowTaskInstance> MyTasks(Pageable pageable,boolean withInput, boolean withOutput, List<SparrowJpaFilter> filters) {
+    public PageImpl<SparrowTaskInstance> MyTasks(Pageable pageable, boolean withInput, boolean withOutput, List<SparrowJpaFilter> filters) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         Set<String> entityIds = new HashSet<>();
@@ -123,10 +123,10 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
                 ProcessInstanceDesc processInstance = this.runtimeDataService.getProcessInstanceById(task.getTaskData().getProcessInstanceId());
                 taskInstance.setProcessName(processInstance.getProcessName());
                 taskInstance.setName(task.getName());
-                if(withInput){
+                if (withInput) {
                     taskInstance.setInputData(this.userTaskService.getTaskInputContentByTaskId(task.getId()));
                 }
-                if(withOutput){
+                if (withOutput) {
                     taskInstance.setOutputData(this.userTaskService.getTaskOutputContentByTaskId(task.getId()));
                 }
                 return taskInstance;
@@ -146,8 +146,8 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     @Override
     public List<SparrowTaskInstance> taskInstancesByProcess(long processInstanceId) {
 
-        return runtimeDataService.getTasksByProcessInstanceId(processInstanceId).stream().map(taskId->{
-            Task task=this.userTaskService.getTask(taskId);
+        return runtimeDataService.getTasksByProcessInstanceId(processInstanceId).stream().map(taskId -> {
+            Task task = this.userTaskService.getTask(taskId);
             SparrowTaskInstance taskInstance = new SparrowTaskInstance();
             taskInstance.setProcessInstanceId(task.getTaskData().getProcessInstanceId());
             taskInstance.setActualOwner(task.getTaskData().getActualOwner() == null ? null : task.getTaskData().getActualOwner().getId());
@@ -171,16 +171,11 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     @Override
     public String saveProcessAsDraft(String deploymentId, String processId, Map<String, Object> body) {
         EntityManager em = this.entityManagerFactory.createEntityManager();
-        try{
-            ProcessDraft processDraft = null;
-            try {
-                processDraft = new ProcessDraft(deploymentId,processId,new ObjectMapper().writeValueAsString(body));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            ProcessDraft processDraft = new ProcessDraft(deploymentId, processId, body);
             em.persist(processDraft);
-            return "{\"id\":\""+processDraft.getId()+"\"}";
-        }finally {
+            return "{\"id\":\"" + processDraft.getId() + "\"}";
+        } finally {
             if (em.isOpen()) {
                 em.close();
             }
@@ -191,7 +186,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     @Override
     public ProcessDraft getProcessDraft(String id) {
         EntityManager em = this.entityManagerFactory.createEntityManager();
-        return em.find(ProcessDraft.class,id);
+        return em.find(ProcessDraft.class, id);
     }
 
     @Override
@@ -202,10 +197,10 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         Root<ProcessDraft> root = criteriaQuery.from(ProcessDraft.class);
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(cb.isNull(root.get("processInstanceId")));
-        if(deploymentId!=null){
-            predicates.add(cb.equal(root.get("deploymentId"),deploymentId));
+        if (deploymentId != null) {
+            predicates.add(cb.equal(root.get("deploymentId"), deploymentId));
         }
-        if(processId!=null){
+        if (processId != null) {
             predicates.add(cb.equal(root.get("processId"), processId));
         }
         criteriaQuery.select(root).distinct(true).where(cb.and(predicates.toArray(new Predicate[]{}))).orderBy(cb.desc(root.get("createdDate")));
@@ -224,24 +219,58 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
     @Transactional
     @Override
-    public void submitProcess(String id,  Map<String, Object> body) {
+    public void submitProcess(String id, Map<String, Object> body) {
         EntityManager em = this.entityManagerFactory.createEntityManager();
-        try{
-            ProcessDraft processDraft = em.find(ProcessDraft.class,id);
-            Long processInstanceId = this.processService.startProcess(processDraft.getDeploymentId(), processDraft.getProcessId(), body);
-            try {
-                processDraft.setProcessData(new ObjectMapper().writeValueAsString(body));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+        try {
+            Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
+            String username = a11.getName();
+            Query queryCount = em.createQuery("select count(*) from ProcessDraft where id=:id and createdBy=:username");
+            queryCount.setParameter("id", id);
+            queryCount.setParameter("username", username);
+            boolean isAuthor = queryCount.executeUpdate() > 0;
+
+            if (username.equalsIgnoreCase("SUPER_SYSADMIN")
+                    || a11.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("SUPER_SYSADMIN"))||isAuthor) {
+                ProcessDraft processDraft = em.find(ProcessDraft.class, id);
+                Long processInstanceId = this.processService.startProcess(processDraft.getDeploymentId(), processDraft.getProcessId(), body);
+                Query query = em.createQuery("delete from ProcessDraft where id = :id");
+                query.setParameter("id", id);
+                query.executeUpdate();
             }
-            processDraft.setProcessInstanceId(processInstanceId);
-            em.persist(processDraft);
-        }finally {
+        } finally {
             if (em.isOpen()) {
                 em.close();
             }
         }
 
 
+    }
+
+    @Transactional
+    @Override
+    public void deleteDraft(Set<String> ids) {
+        EntityManager em = this.entityManagerFactory.createEntityManager();
+        try {
+            Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
+            String username = a11.getName();
+            if (username.equalsIgnoreCase("SUPER_SYSADMIN")
+                    || a11.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("SUPER_SYSADMIN"))) {
+                Query query = em.createQuery("delete from ProcessDraft where id in (:ids)");
+                query.setParameter("ids", ids);
+                query.executeUpdate();
+            } else {
+                Query query = em.createQuery("delete from ProcessDraft where id in (:ids) and createdBy=:username");
+                query.setParameter("ids", ids);
+                query.setParameter("username", username);
+                query.executeUpdate();
+            }
+
+        } finally {
+            if (em.isOpen()) {
+                em.close();
+            }
+        }
     }
 }

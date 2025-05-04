@@ -1,6 +1,8 @@
 package cn.sparrowmini.bpm.ext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
@@ -8,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 @Entity
 @Table
@@ -44,10 +47,12 @@ public class ProcessDraft implements Serializable {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String modifiedBy;
 
-    @Column(columnDefinition = "TEXT")
-    private String processData;
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "TEXT") // or VARCHAR(n), or CLOB if needed
+    private Map<String, Object> processData;
 
-    public ProcessDraft(String deploymentId, String processId, String body) {
+
+    public ProcessDraft(String deploymentId, String processId, Map<String, Object> body) {
         this.deploymentId=deploymentId;
         this.processId=processId;
         this.processData=body;
@@ -121,11 +126,12 @@ public class ProcessDraft implements Serializable {
         this.modifiedBy = modifiedBy;
     }
 
-    public String getProcessData() {
+    public Map<String, Object> getProcessData() {
         return processData;
     }
 
-    public void setProcessData(String processData) {
+    public void setProcessData(Map<String, Object> processData) {
         this.processData = processData;
     }
+
 }
