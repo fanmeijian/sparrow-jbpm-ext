@@ -1,25 +1,18 @@
 package cn.sparrowmini.bpm.ext;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.process.audit.ProcessInstanceLog_;
 import org.jbpm.services.api.ProcessService;
 import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
-import org.jbpm.services.task.audit.service.TaskAuditService;
-import org.jbpm.services.task.audit.service.TaskAuditServiceImpl;
 import org.jbpm.services.task.impl.model.*;
-import org.kie.api.runtime.manager.RuntimeEngine;
-import org.kie.api.task.TaskService;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -190,7 +183,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     }
 
     @Override
-    public PageImpl<ProcessDraft> getProcessDraftList(String deploymentId, String processId, Pageable pageable) {
+    public PageImpl<ProcessDraft> getProcessDraftList(String deploymentId, String processId, boolean withInput, List<String> variableName, Pageable pageable) {
         EntityManager em = this.entityManagerFactory.createEntityManager();
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ProcessDraft> criteriaQuery = cb.createQuery(ProcessDraft.class);
@@ -213,6 +206,21 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         countQuery.select(cb.countDistinct(countRoot));
         countQuery.where(cb.and(predicates.toArray(new Predicate[]{})));
         Long count = em.createQuery(countQuery).getSingleResult();
+
+        if(!processDrafts.isEmpty()){
+            if(withInput){
+                if(variableName!=null){
+                    Set<String> aa= processDrafts.get(0).getProcessData().keySet().stream().filter(f->variableName.stream().noneMatch(a->a.equals(f))).collect(Collectors.toSet());
+                    processDrafts.forEach(f->{
+                        aa.forEach(a->f.getProcessData().remove(a));
+                    });
+                }
+            }else{
+
+                processDrafts.forEach(f->f.setProcessData(null));
+            }
+        }
+
 
         return new PageImpl<ProcessDraft>(count, processDrafts, pageable.getPageIndex(), pageable.getPageSize());
     }

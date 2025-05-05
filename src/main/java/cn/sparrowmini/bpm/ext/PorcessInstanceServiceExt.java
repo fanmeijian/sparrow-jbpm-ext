@@ -1,9 +1,7 @@
 package cn.sparrowmini.bpm.ext;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +42,7 @@ public interface PorcessInstanceServiceExt {
     @GetMapping("/process/draft")
     @ResponseBody
     @Operation(summary = "流程草稿列表")
-    public PageImpl<ProcessDraft> getProcessDraftList(String deploymentId, String processId, @ParameterObject Pageable pageable);
+    public PageImpl<ProcessDraft> getProcessDraftList(String deploymentId, String processId, @RequestParam(required = false) boolean withInput, @RequestParam(required = false) List<String> variableName , @ParameterObject Pageable pageable);
 
     @PostMapping("/process/{id}/submit")
     @ResponseBody
