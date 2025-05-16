@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.springdoc.api.annotations.ParameterObject;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,6 +49,11 @@ public interface PorcessInstanceServiceExt {
     @ResponseBody
     @Operation(summary = "提交流程", operationId = "saveProcessAsDraft")
     public void submitProcess(@PathVariable String id,@RequestBody Map<String, Object> body);
+
+    @PostMapping(value="/process/start", produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    @Operation(summary = "提交流程", operationId = "startProcess")
+    public long startProcess(String deploymentId, String processId,@RequestBody Map<String, Object> body);
 
     @PostMapping("/process/draft/delete")
     @ResponseBody

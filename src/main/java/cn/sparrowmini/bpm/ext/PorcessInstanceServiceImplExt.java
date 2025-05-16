@@ -255,6 +255,15 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
     }
 
+    @Override
+    public long startProcess(String deploymentId, String processId, Map<String, Object> body) {
+        Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
+        String username = a11.getName();
+        body.put("_initiator",username);
+        return this.processService.startProcess(deploymentId, processId, body);
+
+    }
+
     @Transactional
     @Override
     public void deleteDraft(Set<String> ids) {
