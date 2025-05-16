@@ -256,12 +256,12 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     }
 
     @Override
-    public Long startProcess(String deploymentId, String processId, Map<String, Object> body) {
+    public Map<String, Object> startProcess(String deploymentId, String processId, Map<String, Object> body) {
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
         body.put("_initiator",username);
-        return this.processService.startProcess(deploymentId, processId, body);
-
+        Long id = this.processService.startProcess(deploymentId, processId, body);
+        return Map.of("id", id);
     }
 
     @Transactional
