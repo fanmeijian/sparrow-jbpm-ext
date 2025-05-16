@@ -53,7 +53,7 @@ public interface PorcessInstanceServiceExt {
     @PostMapping(value="/process/start", produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseBody
     @Operation(summary = "提交流程", operationId = "startProcess")
-    public long startProcess(String deploymentId, String processId,@RequestBody Map<String, Object> body);
+    public Long startProcess(String deploymentId, String processId,@RequestBody Map<String, Object> body);
 
     @PostMapping("/process/draft/delete")
     @ResponseBody
