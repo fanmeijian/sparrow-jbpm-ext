@@ -71,13 +71,11 @@ public interface PorcessInstanceServiceExt {
 
     @GetMapping(value = "/tasks/comments")
     @ResponseBody
-    @ResponseStatus(code = HttpStatus.NO_CONTENT)
     @Operation(summary = "获取任务意见")
     public List<TaskCommentBean> getTaskComments(List<Long> taskId);
 
     @GetMapping(value = "/process/{id}/tasks/comments")
     @ResponseBody
-    @ResponseStatus(code = HttpStatus.NO_CONTENT)
     @Operation(summary = "获取任务意见")
     public List<TaskCommentBean> getTaskCommentsByProcessInstanceId(@PathVariable Long id);
 
