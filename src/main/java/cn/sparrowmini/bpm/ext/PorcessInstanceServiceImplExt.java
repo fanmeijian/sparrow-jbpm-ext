@@ -9,6 +9,8 @@ import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.task.impl.model.*;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskSummary;
+import org.kie.server.api.model.instance.TaskInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -269,6 +271,13 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
         this.userTaskService.completeAutoProgress(taskId,username,body);
+    }
+
+    @Override
+    public void addTaskComment(Long taskId, String comment) {
+        Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
+        String username = a11.getName();
+        this.userTaskService.addComment(taskId,comment,username,new Date());
     }
 
     @Transactional

@@ -54,15 +54,20 @@ public interface PorcessInstanceServiceExt {
     @PostMapping("/process/start")
     @ResponseBody
     @ResponseStatus(code = HttpStatus.CREATED)
-    @Operation(summary = "提交流程", operationId = "startProcess")
+    @Operation(summary = "启动流程", operationId = "startProcess")
     public Map<String, Object> startProcess(String deploymentId, String processId,@RequestBody Map<String, Object> body);
 
     @PostMapping("/tasks/{taskId}/complete")
     @ResponseBody
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-    @Operation(summary = "提交流程", operationId = "completeTask")
+    @Operation(summary = "完成任务", operationId = "completeTask")
     public void completeTask(@PathVariable Long taskId,@RequestBody Map<String, Object> body);
 
+    @PostMapping(value = "/tasks/{taskId}/comments", consumes = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    @Operation(summary = "添加任务意见")
+    public void addTaskComment(@PathVariable Long taskId,@RequestBody String comment);
 
     @PostMapping("/process/draft/delete")
     @ResponseBody
