@@ -264,6 +264,13 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         return Map.of("id", id);
     }
 
+    @Override
+    public void completeTask(Long taskId, Map<String, Object> body) {
+        Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
+        String username = a11.getName();
+        this.userTaskService.completeAutoProgress(taskId,username,body);
+    }
+
     @Transactional
     @Override
     public void deleteDraft(Set<String> ids) {
