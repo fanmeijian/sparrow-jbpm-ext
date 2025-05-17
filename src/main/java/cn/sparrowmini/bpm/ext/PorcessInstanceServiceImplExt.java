@@ -1,5 +1,6 @@
 package cn.sparrowmini.bpm.ext;
 
+import org.apache.poi.ss.formula.functions.T;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.process.audit.ProcessInstanceLog_;
 import org.jbpm.services.api.ProcessService;
@@ -7,6 +8,7 @@ import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.task.impl.model.*;
+import org.kie.api.task.model.Comment;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
@@ -278,6 +280,26 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
         this.userTaskService.addComment(taskId,comment,username,new Date());
+    }
+
+    @Override
+    public List<TaskCommentBean> getTaskComments(List<Long> taskId) {
+        List<TaskCommentBean> taskCommentBeans = new ArrayList<>();
+        taskId.stream().forEach(id->{
+            Task task = this.userTaskService.getTask(id);
+            List<Comment> comments = this.userTaskService.getCommentsByTaskId(id);
+            comments.forEach(comment -> {
+                TaskCommentBean taskCommentBean = new TaskCommentBean(comment.getId(), task.getId(), task.getName(), comment.getAddedBy().getId(),comment.getAddedAt(),comment.getText());
+                taskCommentBeans.add(taskCommentBean);
+            });
+        });
+
+        return taskCommentBeans;
+    }
+
+    @Override
+    public List<TaskCommentBean> getTaskCommentsByProcessInstanceId(Long id) {
+        return this.getTaskComments(runtimeDataService.getTasksByProcessInstanceId(id));
     }
 
     @Transactional

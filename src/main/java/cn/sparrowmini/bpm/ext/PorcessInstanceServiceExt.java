@@ -69,6 +69,18 @@ public interface PorcessInstanceServiceExt {
     @Operation(summary = "添加任务意见")
     public void addTaskComment(@PathVariable Long taskId,@RequestBody String comment);
 
+    @GetMapping(value = "/tasks/comments")
+    @ResponseBody
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    @Operation(summary = "获取任务意见")
+    public List<TaskCommentBean> getTaskComments(List<Long> taskId);
+
+    @GetMapping(value = "/process/{id}/tasks/comments")
+    @ResponseBody
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    @Operation(summary = "获取任务意见")
+    public List<TaskCommentBean> getTaskCommentsByProcessInstanceId(@PathVariable Long id);
+
     @PostMapping("/process/draft/delete")
     @ResponseBody
     @Operation(summary = "删除草稿", operationId = "deleteDraft")
