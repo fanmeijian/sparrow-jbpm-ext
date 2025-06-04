@@ -1,6 +1,10 @@
 package cn.sparrowmini.bpm.ext;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.apache.poi.ss.formula.functions.T;
+import org.jbpm.process.audit.AuditLogService;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.process.audit.ProcessInstanceLog_;
 import org.jbpm.services.api.ProcessService;
@@ -8,6 +12,7 @@ import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.task.impl.model.*;
+import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.task.model.Comment;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.Task;
@@ -18,8 +23,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.criteria.*;
 import javax.transaction.Transactional;
@@ -39,6 +46,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
     @Autowired
     private ProcessService processService;
+
 
     @Override
     public PageImpl<ProcessInstanceDesc> MyProcessInstances(Pageable pageable, List<SparrowJpaFilter> filters) {
@@ -113,6 +121,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
                 taskInstance.setActualOwner(task.getTaskData().getActualOwner() == null ? null : task.getTaskData().getActualOwner().getId());
                 taskInstance.setCreatedOn(task.getTaskData().getCreatedOn());
                 taskInstance.setId(task.getId());
+                taskInstance.setTaskName(task.getFormName());
                 taskInstance.setDeploymentId(task.getTaskData().getDeploymentId());
                 taskInstance.setPotentialOwners(task.getPeopleAssignments().getPotentialOwners().stream().map(OrganizationalEntity::getId).collect(Collectors.toList()));
                 taskInstance.setProcessId(task.getTaskData().getProcessId());
@@ -150,6 +159,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
             taskInstance.setActualOwner(task.getTaskData().getActualOwner() == null ? null : task.getTaskData().getActualOwner().getId());
             taskInstance.setCreatedOn(task.getTaskData().getCreatedOn());
             taskInstance.setId(task.getId());
+            taskInstance.setTaskName(task.getFormName());
             taskInstance.setDeploymentId(task.getTaskData().getDeploymentId());
             taskInstance.setPotentialOwners(task.getPeopleAssignments().getPotentialOwners().stream().map(OrganizationalEntity::getId).collect(Collectors.toList()));
             taskInstance.setProcessId(task.getTaskData().getProcessId());
@@ -211,17 +221,17 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
         countQuery.where(cb.and(predicates.toArray(new Predicate[]{})));
         Long count = em.createQuery(countQuery).getSingleResult();
 
-        if(!processDrafts.isEmpty()){
-            if(withInput){
-                if(variableName!=null){
-                    Set<String> aa= processDrafts.get(0).getProcessData().keySet().stream().filter(f->variableName.stream().noneMatch(a->a.equals(f))).collect(Collectors.toSet());
-                    processDrafts.forEach(f->{
-                        aa.forEach(a->f.getProcessData().remove(a));
+        if (!processDrafts.isEmpty()) {
+            if (withInput) {
+                if (variableName != null) {
+                    Set<String> aa = processDrafts.get(0).getProcessData().keySet().stream().filter(f -> variableName.stream().noneMatch(a -> a.equals(f))).collect(Collectors.toSet());
+                    processDrafts.forEach(f -> {
+                        aa.forEach(a -> f.getProcessData().remove(a));
                     });
                 }
-            }else{
+            } else {
 
-                processDrafts.forEach(f->f.setProcessData(null));
+                processDrafts.forEach(f -> f.setProcessData(null));
             }
         }
 
@@ -243,7 +253,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
 
             if (username.equalsIgnoreCase("SUPER_SYSADMIN")
                     || a11.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("SUPER_SYSADMIN"))||isAuthor) {
+                    .anyMatch(a -> a.getAuthority().equals("SUPER_SYSADMIN")) || isAuthor) {
                 ProcessDraft processDraft = em.find(ProcessDraft.class, id);
                 Long processInstanceId = this.processService.startProcess(processDraft.getDeploymentId(), processDraft.getProcessId(), body);
                 Query query = em.createQuery("delete from ProcessDraft where id = :id");
@@ -263,7 +273,7 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     public Map<String, Object> startProcess(String deploymentId, String processId, Map<String, Object> body) {
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
-        body.put("_initiator",username);
+        body.put("_initiator", username);
         Long id = this.processService.startProcess(deploymentId, processId, body);
         return Map.of("id", id);
     }
@@ -272,24 +282,24 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
     public void completeTask(Long taskId, Map<String, Object> body) {
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
-        this.userTaskService.completeAutoProgress(taskId,username,body);
+        this.userTaskService.completeAutoProgress(taskId, username, body);
     }
 
     @Override
     public void addTaskComment(Long taskId, String comment) {
         Authentication a11 = SecurityContextHolder.getContext().getAuthentication();
         String username = a11.getName();
-        this.userTaskService.addComment(taskId,comment,username,new Date());
+        this.userTaskService.addComment(taskId, comment, username, new Date());
     }
 
     @Override
     public List<TaskCommentBean> getTaskComments(List<Long> taskId) {
         List<TaskCommentBean> taskCommentBeans = new ArrayList<>();
-        taskId.stream().forEach(id->{
+        taskId.stream().forEach(id -> {
             Task task = this.userTaskService.getTask(id);
             List<Comment> comments = this.userTaskService.getCommentsByTaskId(id);
             comments.forEach(comment -> {
-                TaskCommentBean taskCommentBean = new TaskCommentBean(comment.getId(), task.getId(), task.getName(), comment.getAddedBy().getId(),comment.getAddedAt(),comment.getText());
+                TaskCommentBean taskCommentBean = new TaskCommentBean(comment.getId(), task.getId(), task.getName(), comment.getAddedBy().getId(), comment.getAddedAt(), comment.getText());
                 taskCommentBeans.add(taskCommentBean);
             });
         });
@@ -327,5 +337,34 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
                 em.close();
             }
         }
+    }
+
+    @Override
+    public Map<String, Object> getProcessVariables(VariableArchive.VariableArchiveId id) {
+        EntityManager entityManager = this.entityManagerFactory.createEntityManager();
+        try {
+            Query query = entityManager.createQuery("select p from ProcessInstanceLog p where p.processInstanceId=:processInstanceId and p.externalId=:deploymentId and p.processId=:processId", ProcessInstanceLog.class);
+            query.setParameter("processInstanceId", id.getProcessInstanceId());
+            query.setParameter("deploymentId", id.getDeploymentId());
+            query.setParameter("processId", id.getProcessId());
+
+            ProcessInstanceLog processInstanceLog = (ProcessInstanceLog) query.getSingleResult();
+            if (processInstanceLog.getStatus() == ProcessInstance.STATE_COMPLETED
+                    || processInstanceLog.getStatus() == ProcessInstance.STATE_ABORTED
+            ) {
+                VariableArchive variableArchive = entityManager.find(VariableArchive.class, id);
+                return new ObjectMapper().readValue(variableArchive.getVariableJson(), new TypeReference<Map<String, Object>>() {
+                });
+            } else {
+                return this.processService.getProcessInstanceVariables(id.getDeploymentId(), id.getProcessInstanceId());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (entityManager.isOpen()) {
+                entityManager.close();
+            }
+        }
+
     }
 }

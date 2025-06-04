@@ -83,4 +83,9 @@ public interface PorcessInstanceServiceExt {
     @ResponseBody
     @Operation(summary = "删除草稿", operationId = "deleteDraft")
     public void deleteDraft(@RequestBody Set<String> ids);
+
+    @GetMapping("/process-variables")
+    @ResponseBody
+    @Operation(summary = "查询流程变量", operationId = "getProcessVariables")
+    public Map<String, Object> getProcessVariables(VariableArchive.VariableArchiveId id);
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 public class SparrowTaskInstance implements Serializable {
     private Long id;
     private String name;
+    private String taskName;
     private String deploymentId;
     private String processId;
     private Long processInstanceId;
@@ -116,5 +117,13 @@ public class SparrowTaskInstance implements Serializable {
 
     public void setOutputData(Map<String, Object> outputData) {
         this.outputData = outputData;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
     }
 }
