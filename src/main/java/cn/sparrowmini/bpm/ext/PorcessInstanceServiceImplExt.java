@@ -353,8 +353,13 @@ public class PorcessInstanceServiceImplExt implements PorcessInstanceServiceExt 
                     || processInstanceLog.getStatus() == ProcessInstance.STATE_ABORTED
             ) {
                 VariableArchive variableArchive = entityManager.find(VariableArchive.class, id);
-                return new ObjectMapper().readValue(variableArchive.getVariableJson(), new TypeReference<Map<String, Object>>() {
-                });
+                if(variableArchive!=null){
+                    return new ObjectMapper().readValue(variableArchive.getVariableJson(), new TypeReference<Map<String, Object>>() {
+                    });
+                }else{
+                    return new HashMap<>();
+                }
+
             } else {
                 return this.processService.getProcessInstanceVariables(id.getDeploymentId(), id.getProcessInstanceId());
             }
